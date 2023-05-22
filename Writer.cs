@@ -8,9 +8,21 @@ namespace Assignment4_CS_GUI
 {
     internal class Writer
     {
-        public Writer() 
-        { 
-        
+        private List<string> sourceList; //text from a file 
+        private BoundedBuffer buffer;
+        public Writer(BoundedBuffer buffer, List<string>dataToWrite) 
+        {
+            this.buffer = buffer;
+            this.sourceList = dataToWrite;
+        }
+
+        public void RunWrite()
+        {
+            foreach (string str in sourceList) 
+            {
+                buffer.Write(str);
+                Thread.Sleep(50);
+            }
         }
     }
 }

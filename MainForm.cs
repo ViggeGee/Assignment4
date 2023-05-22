@@ -5,19 +5,35 @@ namespace Assignment4_CS_GUI
 {
     public partial class MainForm : Form
     {
-        List <Writer> writers = new List <Writer> ();
-        List <Reader> readers = new List <Reader> ();
-        List <Modifier> modifiers = new List <Modifier> ();
+        string findWord;
+        string replaceWord;
+
+        Thread writerThread;
+        Thread readerThread;
+        Thread modifierThread;
+        List <Thread> writers = new List <Thread> ();
+        List <Thread> readers = new List <Thread> ();
+        List <Thread> modifiers = new List <Thread> ();
+        List<String> sourceStrings;
+        List<String> targetStrings;
         Modifier modifier;
         Writer writer;
         Reader reader;
+
         private FileManager fileMngr = new FileManager();
 
         public MainForm()
         {
-            CreateWriterThreads();
-            CreateReaderThreads();
-            CreateModifierThreads();
+            sourceStrings= new List <String> ();
+            targetStrings= new List <String> ();
+            CreateThreads();
+            foreach (Thread thread in readers)
+                thread.Start();
+            foreach (Thread thread in writers)
+                thread.Start();
+            foreach (Thread thread in modifiers)
+                thread.Start();
+
             InitializeComponent();
             InitializeGUI();
         }
@@ -71,24 +87,59 @@ namespace Assignment4_CS_GUI
             }
         }
 
-        public void CreateWriterThreads()
+        public void CreateThreads()
         {
-            writers.Add(writer = new Writer());
-            writers.Add(writer = new Writer());
-            writers.Add(writer = new Writer());
+            BoundedBuffer buffer = new BoundedBuffer();
+            writer = new Writer(buffer, sourceStrings);
+            reader = new Reader(buffer, targetStrings, sourceStrings.Count);
+            modifier = new Modifier(buffer);
+
+            writers.Add(writerThread = new Thread(writer.RunWrite));
+            writers.Add(writerThread = new Thread(writer.RunWrite));
+            writers.Add(writerThread = new Thread(writer.RunWrite));
+
+            readers.Add(readerThread = new Thread(reader.RunRead));
+
+            modifiers.Add(modifierThread = new Thread(modifier.RunModify));
+            modifiers.Add(modifierThread = new Thread(modifier.RunModify));
+            modifiers.Add(modifierThread = new Thread(modifier.RunModify));
+            modifiers.Add(modifierThread = new Thread(modifier.RunModify));
+
+           
         }
 
-        public void CreateReaderThreads() 
-        { 
-            readers.Add(reader = new Reader());
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+
         }
 
-        public void CreateModifierThreads()
+        private void txtFind_TextChanged(object sender, EventArgs e)
         {
-            modifiers.Add(modifier = new Modifier());
-            modifiers.Add(modifier = new Modifier());
-            modifiers.Add(modifier = new Modifier());
-            modifiers.Add(modifier = new Modifier());
+             findWord = txtFind.Text;
+        }
+
+        private void txtReplace_TextChanged(object sender, EventArgs e)
+        {
+             replaceWord = txtReplace.Text; 
+        }
+
+        private void btnOk_Click_1(object sender, EventArgs e)
+        {
+            
+
+            string[] lines = rtxtSource.Text.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            string modifiedText = string.Join(Environment.NewLine, lines.Select(line => line.Replace(findWord, replaceWord)));
+            rtxtDest.Text = modifiedText;
+        }
+
+        private void rtxtSource_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void rtxtDest_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 
