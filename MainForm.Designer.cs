@@ -127,6 +127,7 @@
             this.lstStatus.Name = "lstStatus";
             this.lstStatus.Size = new System.Drawing.Size(878, 284);
             this.lstStatus.TabIndex = 8;
+            this.lstStatus.SelectedIndexChanged += new System.EventHandler(this.lstStatus_SelectedIndexChanged);
             // 
             // groupBox1
             // 

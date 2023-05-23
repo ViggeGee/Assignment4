@@ -24,18 +24,15 @@ namespace Assignment4_CS_GUI
 
         public MainForm()
         {
-            sourceStrings= new List <String> ();
-            targetStrings= new List <String> ();
-            CreateThreads();
-            foreach (Thread thread in readers)
-                thread.Start();
-            foreach (Thread thread in writers)
-                thread.Start();
-            foreach (Thread thread in modifiers)
-                thread.Start();
-
             InitializeComponent();
             InitializeGUI();
+
+            sourceStrings= new List <String> ();
+            targetStrings= new List <String> ();
+            
+
+            
+
         }
 
         private void InitializeGUI()
@@ -60,9 +57,16 @@ namespace Assignment4_CS_GUI
                     rtxtSource.AppendText(line + "\n");
                 }
                 lstStatus.Items.Add("Lines read from the file: " + lines.Count);
+                 
             }
             else
                 MessageBox.Show(errorMsg);
+
+            BoundedBuffer buffer = new BoundedBuffer(lstStatus, rtxtDest);
+            writer = new Writer(buffer, lines);
+            reader = new Reader(buffer, targetStrings, lines.Count, rtxtDest);
+            modifier = new Modifier(buffer, lines.Count, lstStatus);
+            
         }
 
 
@@ -85,27 +89,29 @@ namespace Assignment4_CS_GUI
                 string fileName = openFileDialog1.FileName;  //important
                 readDataFromTextFile(fileName);
             }
+
+            
         }
 
         public void CreateThreads()
         {
-            BoundedBuffer buffer = new BoundedBuffer();
-            writer = new Writer(buffer, sourceStrings);
-            reader = new Reader(buffer, targetStrings, sourceStrings.Count);
-            modifier = new Modifier(buffer);
+            
 
-            writers.Add(writerThread = new Thread(writer.RunWrite));
-            writers.Add(writerThread = new Thread(writer.RunWrite));
-            writers.Add(writerThread = new Thread(writer.RunWrite));
+            writers.Add(new Thread(writer.RunWrite));
+            writers.Add(new Thread(writer.RunWrite));
+            writers.Add(new Thread(writer.RunWrite));
 
-            readers.Add(readerThread = new Thread(reader.RunRead));
+            readers.Add(new Thread(reader.RunRead));
 
-            modifiers.Add(modifierThread = new Thread(modifier.RunModify));
-            modifiers.Add(modifierThread = new Thread(modifier.RunModify));
-            modifiers.Add(modifierThread = new Thread(modifier.RunModify));
-            modifiers.Add(modifierThread = new Thread(modifier.RunModify));
+            modifier.find = findWord;
+            modifier.replace = replaceWord; 
 
-           
+            modifiers.Add(new Thread(modifier.Modify));
+            modifiers.Add(new Thread(modifier.Modify));
+            modifiers.Add(new Thread(modifier.Modify));
+            modifiers.Add(new Thread(modifier.Modify));
+
+            
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -125,11 +131,23 @@ namespace Assignment4_CS_GUI
 
         private void btnOk_Click_1(object sender, EventArgs e)
         {
+            CreateThreads();
             
-
-            string[] lines = rtxtSource.Text.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-            string modifiedText = string.Join(Environment.NewLine, lines.Select(line => line.Replace(findWord, replaceWord)));
-            rtxtDest.Text = modifiedText;
+            foreach (Thread thread in writers)
+            {
+                thread.Name = "Writer";
+                thread.Start();
+            }
+            foreach (Thread thread in readers)
+            {
+                thread.Name = "Reader";
+                thread.Start();
+            }
+            foreach (Thread thread in modifiers)
+            {
+                thread.Name = "modifier";
+                thread.Start();
+            }
         }
 
         private void rtxtSource_TextChanged(object sender, EventArgs e)
@@ -139,7 +157,12 @@ namespace Assignment4_CS_GUI
 
         private void rtxtDest_TextChanged(object sender, EventArgs e)
         {
+           
+        }
 
+        private void lstStatus_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            
         }
     }
 

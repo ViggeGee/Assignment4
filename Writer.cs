@@ -10,10 +10,12 @@ namespace Assignment4_CS_GUI
     {
         private List<string> sourceList; //text from a file 
         private BoundedBuffer buffer;
-        public Writer(BoundedBuffer buffer, List<string>dataToWrite) 
+        RichTextBox textBox;
+        public Writer(BoundedBuffer buffer, List<string>sourceList) 
         {
+            
             this.buffer = buffer;
-            this.sourceList = dataToWrite;
+            this.sourceList = sourceList;
         }
 
         public void RunWrite()

@@ -9,24 +9,32 @@ namespace Assignment4_CS_GUI
 {
     internal class BoundedBuffer
     {
+        int currentWriter;
+        int completedWriters;
         private const int bufferSize = 20;
         private string[] textBuffer;
         private BufferStatus[] dataStatus;
         private int writerPos;
         private int readerPos;
-        private int modifyPos;
+        private int modiferPos;
         private object lockObj;
         private int readerCount = 0;
+        ListBox listBox;
+        RichTextBox textBox;
 
-
-        public BoundedBuffer()
+        public BoundedBuffer(ListBox listBox, RichTextBox textBox)
         {
-            textBuffer = new string[bufferSize];
-            dataStatus = new BufferStatus[bufferSize];
+            this.textBox = textBox;
+            this.listBox = listBox;
 
+            textBuffer = new string[bufferSize];
+            
+            dataStatus = new BufferStatus[bufferSize];
+            currentWriter = 0;
+            completedWriters = 0;
             writerPos = 0;
             readerPos = 0;
-            modifyPos = 0;
+            modiferPos = 0;
 
             lockObj = new object();
         }
@@ -40,92 +48,61 @@ namespace Assignment4_CS_GUI
                     Monitor.Wait(lockObj);
                 }
                 textBuffer[writerPos] = data;
-                dataStatus[writerPos] = BufferStatus.Empty;
 
-                writerPos = (writerPos + 1) % textBuffer.Length;
 
+                dataStatus[writerPos] = BufferStatus.New;
+                writerPos = (writerPos + 1) % bufferSize;
                 Monitor.PulseAll(lockObj);
             }
         }
 
-        public string Read(out bool lastReader)
+
+        public string Read()
         {
             string data = string.Empty;
-            lastReader = false;
+
 
             lock (lockObj)  //same as Monitor Enter
             {
-                readerCount++;
-
-                //Condition Sych - if the readerPos is not full (no data)
-                //block (go to sleep inside the monitor)
-                while (dataStatus[readerPos] != BufferStatus.New)
+                while (dataStatus[readerPos] != BufferStatus.Checked)
+                {
                     Monitor.Wait(lockObj);
+                }
 
                 //read data and mark the position
                 data = textBuffer[readerPos];
-
-                readerCount--;
-
-                Console.WriteLine($"{Thread.CurrentThread.Name:10} :{data}! at pos [{readerPos}]");
-
-                if (readerCount == 0)
+                dataStatus[readerPos] = BufferStatus.Empty;
+                readerPos = (readerPos + 3) % bufferSize;
+                listBox.Invoke(new Action(() =>
                 {
-                    dataStatus[readerPos] = BufferStatus.Empty;
-                    readerPos = (readerPos + 1) % textBuffer.Length;
-                    lastReader = true;
-                }
+                    listBox.Items.Add("Reader has read " + data + ", position" + readerPos);
+                }));
 
                 Monitor.PulseAll(lockObj);
-            }
             return data;
+            }
         }
         private bool lastReader = false;
         public bool IsLastReader { get => lastReader; }
 
-        public string ReadToModify()
+        public int Modify(string find, string replace)
         {
-            string data = string.Empty;
-
+            //data = string.
             lock (lockObj)
             {
-                while (dataStatus[modifyPos] != BufferStatus.Empty && !IsFinished)
+                while (dataStatus[modiferPos] != BufferStatus.New)
                 {
                     Monitor.Wait(lockObj);
                 }
+                textBuffer[modiferPos] = textBuffer[modiferPos].Replace(find, replace);
 
-                if (dataStatus[modifyPos] == BufferStatus.New)
-                {
-                    data = textBuffer[modifyPos];
-                    dataStatus[modifyPos] = BufferStatus.Checked;
-                }
-                else if (IsFinished)
-                {
-                    data = null; // No more strings to modify
-                }
+                dataStatus[modiferPos] = BufferStatus.Checked;
+                modiferPos = (modiferPos + 1) % bufferSize;
 
-                modifyPos = (modifyPos + 1) % textBuffer.Length;
+                listBox.Invoke(new Action(() => { listBox.Items.Add("modifier  on buffer pos " + modiferPos); }));
 
                 Monitor.PulseAll(lockObj);
-            }
-
-            return data;
-        }
-        public void WriteModified(string modifiedData)
-        {
-            lock (lockObj)
-            {
-                while (dataStatus[writerPos] != BufferStatus.Empty)
-                {
-                    Monitor.Wait(lockObj);
-                }
-
-                textBuffer[writerPos] = modifiedData;
-                dataStatus[writerPos] = BufferStatus.New;
-
-                writerPos = (writerPos + 1) % textBuffer.Length;
-
-                Monitor.PulseAll(lockObj);
+                return modiferPos;
             }
         }
 

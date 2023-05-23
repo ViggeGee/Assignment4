@@ -12,8 +12,10 @@ namespace Assignment4_CS_GUI
 
         private BoundedBuffer buffer;
         private int numOfStringsToRead;
-        public Reader(BoundedBuffer buffer, List<string> targetList, int numOfStringsToRead) 
+        RichTextBox textBox;
+        public Reader(BoundedBuffer buffer, List<string> targetList, int numOfStringsToRead, RichTextBox textBox) 
         {
+            this.textBox = textBox;
             this.buffer = buffer;
             this.targetList = targetList;
             this.numOfStringsToRead = numOfStringsToRead;
@@ -21,17 +23,20 @@ namespace Assignment4_CS_GUI
 
         public void RunRead()
         {
-            for (int i = 0; i < numOfStringsToRead; i++)
+            bool runRead = true;
+            while (runRead)
             {
-                bool lastReader = false;
-                string str = buffer.Read(out lastReader);
+                for (int i = 0; i < numOfStringsToRead; i++)
+                {
+                    string str = buffer.Read();
 
-                if (buffer.IsLastReader)
-                    targetList.Add(str);
+                    textBox.Invoke(new Action(() =>
+                    {
+                        textBox.Text += " "+str;
+                    }));
 
-                if (buffer.IsLastReader && (targetList.Count == numOfStringsToRead))
-                    buffer.IsFinished = true;
-                Thread.Sleep(50); //Sleep affects the execution
+                    Thread.Sleep(50);
+                }
             }
         }
     }
